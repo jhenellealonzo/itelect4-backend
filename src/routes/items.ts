@@ -29,17 +29,16 @@ function pickEditableFields(body: unknown): Record<string, unknown> | null {
 }
 
 export const itemRouter = Router();
-itemRouter.use(requireAuth);
 
-itemRouter.get("/", async (req: Request, res: Response) => {
-  const items = await Item.find({ ownerId: req.userId }).sort({ dateLost: -1 });
+itemRouter.get("/", async (_req: Request, res: Response) => {
+  const items = await Item.find().sort({ dateLost: -1, name: 1, _id: 1 });
   res.json(items);
 });
 
 itemRouter.get(
   "/:id",
   async (req: Request<ItemIdParams>, res: Response) => {
-    const item = await Item.findOne({ _id: req.params.id, ownerId: req.userId });
+    const item = await Item.findById(req.params.id);
     if (!item) {
       res.status(404).json({ message: "No item with that id" });
       return;
@@ -50,7 +49,13 @@ itemRouter.get(
 
 itemRouter.post(
   "/",
+  requireAuth,
   async (req: Request<NoParams, unknown, NewItemBody>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ message: "Authentication required" });
+      return;
+    }
+
     const fields = pickEditableFields(req.body);
     if (!fields) {
       res.status(400).json({ message: "Request body must be a JSON object" });
@@ -64,10 +69,16 @@ itemRouter.post(
 
 itemRouter.patch(
   "/:id",
+  requireAuth,
   async (
     req: Request<ItemIdParams, unknown, ItemUpdateBody>,
     res: Response,
   ) => {
+    if (!req.userId) {
+      res.status(401).json({ message: "Authentication required" });
+      return;
+    }
+
     const fields = pickEditableFields(req.body);
     if (!fields || Object.keys(fields).length === 0) {
       res.status(400).json({ message: "Provide at least one item field to update" });
@@ -89,7 +100,13 @@ itemRouter.patch(
 
 itemRouter.delete(
   "/:id",
+  requireAuth,
   async (req: Request<ItemIdParams>, res: Response) => {
+    if (!req.userId) {
+      res.status(401).json({ message: "Authentication required" });
+      return;
+    }
+
     const item = await Item.findOneAndDelete({
       _id: req.params.id,
       ownerId: req.userId,

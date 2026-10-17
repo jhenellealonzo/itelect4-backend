@@ -20,6 +20,15 @@ export interface Items {
   ownerId: number;
 }
 
+export interface Claims {
+  id: number;
+  itemId: number;
+  claimantId: number;
+  claimDate: Date;
+  status: "pending" | "approved" | "rejected";
+  proof: string;
+}
+
 export type UserDoc = Omit<User, "id"> & {
   password: string;
 };
@@ -35,6 +44,16 @@ export type NewItemBody = Omit<Items, "id" | "ownerId" | "dateLost"> & {
 };
 
 export type ItemUpdateBody = Partial<NewItemBody>;
+
+export type ClaimDoc = Omit<Claims, "id" | "itemId" | "claimantId"> & {
+  itemId: Types.ObjectId;
+  claimantId: Types.ObjectId;
+};
+
+export interface NewClaimBody {
+  itemId: string;
+  proof: string;
+}
 
 export interface TokenPayload {
   userId: string;
